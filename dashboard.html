@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedRush - Emergency Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="container">
+    <div class="topbar">
+      <h1>🏥 MedRush</h1>
+      <div class="navbtns">
+        <button class="ghost" onclick="location.href='about.html'">About Us</button>
+        <button class="ghost" onclick="location.href='doctor-dashboard.html'">Doctor Portal</button>
+        <button class="secondary" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Emergency Details Card -->
+      <div class="card">
+        <h2>🚑 Emergency Details</h2>
+        <input id="pname" placeholder="Patient Full Name" maxlength="50">
+        <input id="pphone" placeholder="Phone Number" maxlength="15">
+        <select id="etype">
+          <option value="">Select Emergency Type</option>
+          <option value="cardiac">Cardiac / Heart Issue</option>
+          <option value="neuro">Neurological / Stroke</option>
+          <option value="trauma">Trauma / Accident</option>
+          <option value="burn">Burn Injury</option>
+          <option value="general">General Emergency</option>
+        </select>
+        <textarea id="symptoms" placeholder="Describe symptoms in detail..."></textarea>
+        <button onclick="savePatient()">💾 Save Patient Details</button>
+        <button class="danger" onclick="emergencyCall()">📞 EMERGENCY CALL 108</button>
+      </div>
+
+      <!-- Hospital Suggestions Card -->
+      <div class="card">
+        <h2>🏥 Suggested Hospitals</h2>
+        <div id="suggestedHospitals" class="hospital-list">
+          <p class="info-text">Fill emergency details above to get hospital suggestions based on symptoms.</p>
+        </div>
+      </div>
+
+      <!-- Map Card -->
+      <div class="card wide">
+        <h2>📍 Nearby Hospitals Map</h2>
+        <button onclick="showNearbyHospitals()">🔍 Find Hospitals Near Me</button>
+        <div id="map"></div>
+      </div>
+
+      <!-- Hospital List Card -->
+      <div class="card wide">
+        <h2>📋 Hospital List</h2>
+        <div id="hospitalList"></div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

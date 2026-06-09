@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedRush - Register</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="card auth-card">
+      <h1>🏥 MedRush</h1>
+      <h2>Create Account</h2>
+
+      <input id="rname" type="text" placeholder="Full Name" maxlength="50">
+      <input id="remail" type="email" placeholder="Email Address">
+      <input id="rphone" type="tel" placeholder="Phone Number" maxlength="15">
+      <input id="rpass" type="password" placeholder="Password (min 6 characters)">
+      <select id="rrole">
+        <option value="patient">👤 Patient</option>
+        <option value="doctor">👨‍⚕️ Doctor</option>
+      </select>
+
+      <button onclick="register()">Register</button>
+      <button class="secondary" onclick="location.href='login.html'">Already have an account? Login</button>
+      <button class="ghost" onclick="location.href='about.html'">About Us</button>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

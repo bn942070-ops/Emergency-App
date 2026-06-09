@@ -1,0 +1,36 @@
+{
+  "users": [
+    {
+      "id": 1781025268480,
+      "name": "buddu karan",
+      "email": "karanbuddu279@gmail.com",
+      "phone": "8050245881",
+      "passwordHash": "$2a$10$KdXOSaGAylu//6Sl5svaIOQkIWxOL8coKY8Fp8WseESLSUu6K.oyq",
+      "role": "patient"
+    }
+  ],
+  "patients": [
+    {
+      "id": 1781025302865,
+      "userId": 1781025268480,
+      "name": "karan",
+      "phone": "8050245881",
+      "emergency_type": "cardiac",
+      "symptoms": "chest pain",
+      "createdAt": "2026-06-09T17:15:02.865Z"
+    }
+  ],
+  "alerts": [
+    {
+      "id": 1781025322682,
+      "patientId": 1781025302865,
+      "patientName": "karan",
+      "emergencyType": "cardiac",
+      "symptoms": "chest pain",
+      "hospital": "Apollo Heart Institute",
+      "createdAt": "2026-06-09T17:15:22.682Z",
+      "status": "pending"
+    }
+  ],
+  "doctors": []
+}

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedRush - Doctor Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="container">
+    <div class="topbar">
+      <h1>👨‍⚕️ MedRush Doctor Portal</h1>
+      <div class="navbtns">
+        <button class="ghost" onclick="location.href='dashboard.html'">Patient Portal</button>
+        <button class="ghost" onclick="location.href='about.html'">About Us</button>
+        <button class="secondary" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🚨 Emergency Alerts</h2>
+      <div id="alertsList" class="alerts-container">
+        <p class="info-text">Loading alerts...</p>
+      </div>
+    </div>
+  </div>
+  <script>
+    function getToken() { return localStorage.getItem("token") || ""; }
+    
+    function logout() {
+      localStorage.removeItem("token");
+      location.href = "login.html";
+    }
+
+    async function loadAlerts() {
+      const token = getToken();
+      if (!token) {
+        location.href = "login.html";
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/alerts", {
+          headers: { "Authorization": "Bearer " + token }
+        });
+        const data = await res.json();
+        
+        const container = document.getElementById("alertsList");
+        if (data.alerts && data.alerts.length > 0) {
+          container.innerHTML = data.alerts.map(alert => `
+            <div class="alert-card ${alert.status === 'pending' ? 'pending' : ''}">
+              <div class="alert-header">
+                <span class="emergency-type">🚨 ${alert.emergencyType}</span>
+                <span class="alert-time">${new Date(alert.createdAt).toLocaleString()}</span>
+              </div>
+              <div class="alert-body">
+                <p><strong>Patient:</strong> ${alert.patientName}</p>
+                <p><strong>Symptoms:</strong> ${alert.symptoms}</p>
+                <p><strong>Hospital:</strong> ${alert.hospital}</p>
+              </div>
+              <div class="alert-footer">
+                <button onclick="acknowledgeAlert(${alert.id})" class="success">✓ Acknowledge</button>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          container.innerHTML = '<p class="info-text">No pending alerts. You\'re all caught up! ✅</p>';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function acknowledgeAlert(alertId) {
+      alert(`Alert ${alertId} acknowledged. Preparing for patient arrival.`);
+      loadAlerts();
+    }
+
+    loadAlerts();
+    setInterval(loadAlerts, 10000);
+  </script>
+  <style>
+    .alert-card {
+      background: rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border-left: 4px solid #ff4444;
+    }
+    .alert-card.pending {
+      border-left-color: #ff4444;
+      animation: pulse 1s;
+    }
+    @keyframes pulse {
+      0% { background: rgba(255,68,68,0.1); }
+      100% { background: rgba(255,255,255,0.1); }
+    }
+    .alert-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .emergency-type { font-weight: bold; color: #ff6666; }
+    .alert-time { font-size: 12px; opacity: 0.7; }
+    .alert-body p { margin: 8px 0; }
+    .alert-footer { margin-top: 12px; }
+    button.success { background: #28a745; }
+  </style>
+</body>
+</html>
