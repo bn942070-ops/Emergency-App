@@ -8,23 +8,53 @@ const nodemailer = require("nodemailer");
 require("dotenv").config();
 
 const app = express();
+
+// IMPORTANT: These must be in correct order
 app.use(cors());
 app.use(express.json());
+
+// ✅ FIX: Serve static files from "public" folder
 app.use(express.static(path.join(__dirname, "public")));
 
+// ✅ FIX: Handle root route - serve login.html
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+// ✅ FIX: Handle all other HTML routes
+app.get("/login.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+app.get("/register.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "register.html"));
+});
+
+app.get("/dashboard.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+});
+
+app.get("/doctor-dashboard.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "doctor-dashboard.html"));
+});
+
+app.get("/about.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "about.html"));
+});
+
+app.get("/style.css", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "style.css"));
+});
+
+app.get("/app.js", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "app.js"));
+});
+
+// Database setup
 const DB_PATH = path.join(__dirname, "db.json");
 const JWT_SECRET = process.env.JWT_SECRET || "medrush_secret_key_2024";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^[0-9]{10,15}$/;
-
-// Email configuration (for doctor notifications)
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER || "your-email@gmail.com",
-    pass: process.env.EMAIL_PASS || "your-app-password"
-  }
-});
 
 function readDB() {
   if (!fs.existsSync(DB_PATH)) {
@@ -48,7 +78,7 @@ function auth(req, res, next) {
   }
 }
 
-// Hospital suggestion based on symptoms
+// Hospital suggestion function
 function suggestHospital(symptoms, emergencyType) {
   const hospitals = {
     cardiac: [
@@ -63,10 +93,6 @@ function suggestHospital(symptoms, emergencyType) {
       { name: "St. John's Trauma Center", lat: 12.9351, lng: 77.5625, phone: "080-22065000" },
       { name: "Columbia Asia Hospital", lat: 13.0359, lng: 77.5971, phone: "080-61656666" }
     ],
-    burn: [
-      { name: "Victory Burns Center", lat: 13.0827, lng: 77.5872, phone: "080-25551234" },
-      { name: "HOSMAT Hospital", lat: 12.9716, lng: 77.5946, phone: "080-25591234" }
-    ],
     general: [
       { name: "General Hospital", lat: 12.9716, lng: 77.5946, phone: "108" },
       { name: "City Hospital", lat: 12.9345, lng: 77.6267, phone: "102" }
@@ -80,70 +106,11 @@ function suggestHospital(symptoms, emergencyType) {
     return hospitals.neuro;
   if (symptomsLower.includes("accident") || symptomsLower.includes("injury") || emergencyType?.toLowerCase().includes("trauma"))
     return hospitals.trauma;
-  if (symptomsLower.includes("burn") || emergencyType?.toLowerCase().includes("burn"))
-    return hospitals.burn;
   return hospitals.general;
-}
-
-// Send notification to doctors
-async function notifyDoctors(patient, hospital) {
-  const db = readDB();
-  const doctors = db.doctors || [];
-  
-  const alertMessage = `
-    🚨 EMERGENCY ALERT 🚨
-    
-    Patient: ${patient.name}
-    Emergency: ${patient.emergency_type}
-    Symptoms: ${patient.symptoms}
-    Phone: ${patient.phone}
-    
-    Hospital: ${hospital.name}
-    Phone: ${hospital.phone}
-    
-    Time: ${new Date().toLocaleString()}
-  `;
-
-  // Store alert in database
-  const alert = {
-    id: Date.now(),
-    patientId: patient.id,
-    patientName: patient.name,
-    emergencyType: patient.emergency_type,
-    symptoms: patient.symptoms,
-    hospital: hospital.name,
-    createdAt: new Date().toISOString(),
-    status: "pending"
-  };
-  db.alerts.push(alert);
-  writeDB(db);
-
-  // Send email notifications to doctors
-  for (const doctor of doctors) {
-    if (doctor.email) {
-      try {
-        await transporter.sendMail({
-          from: process.env.EMAIL_USER || "medrush@emergency.com",
-          to: doctor.email,
-          subject: `🚨 EMERGENCY ALERT: ${patient.emergency_type} - Patient incoming to ${hospital.name}`,
-          text: alertMessage
-        });
-      } catch (err) {
-        console.log("Email error:", err);
-      }
-    }
-  }
-  
-  return alert;
 }
 
 // ============= API ROUTES =============
 
-app.get("/", (req, res) => {
-  res.redirect("/login.html");
-});
-
-// Register
 app.post("/api/register", async (req, res) => {
   const { name, email, phone, password, role = "patient" } = req.body;
   
@@ -182,7 +149,6 @@ app.post("/api/register", async (req, res) => {
   res.json({ message: "Registered successfully", user: { id: newUser.id, name: newUser.name } });
 });
 
-// Login
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
   
@@ -209,7 +175,6 @@ app.post("/api/login", async (req, res) => {
   });
 });
 
-// Forgot Password
 app.post("/api/forgot-password", async (req, res) => {
   const { email } = req.body;
   if (!EMAIL_REGEX.test(email)) 
@@ -219,14 +184,9 @@ app.post("/api/forgot-password", async (req, res) => {
   const user = db.users.find(u => u.email === email);
   if (!user) return res.status(404).json({ message: "Email not found" });
   
-  // Generate reset token (simplified for demo)
-  const resetToken = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "1h" });
-  res.json({ 
-    message: `Password reset link sent to ${email} (Demo: Use token ${resetToken.substring(0, 20)}...)` 
-  });
+  res.json({ message: `Password reset link sent to ${email} (Demo mode)` });
 });
 
-// Save patient emergency details with hospital suggestion
 app.post("/api/patient", auth, async (req, res) => {
   const { name, phone, emergency_type, symptoms } = req.body;
   
@@ -251,7 +211,6 @@ app.post("/api/patient", auth, async (req, res) => {
     createdAt: new Date().toISOString()
   };
 
-  // Suggest hospital based on symptoms
   const suggestedHospitals = suggestHospital(symptoms, emergency_type);
   
   db.patients.push(patient);
@@ -264,7 +223,6 @@ app.post("/api/patient", auth, async (req, res) => {
   });
 });
 
-// Send alert to doctors and get hospital suggestions
 app.post("/api/send-alert", auth, async (req, res) => {
   const { patientId, hospitalName, hospitalLat, hospitalLng, hospitalPhone } = req.body;
   const db = readDB();
@@ -272,14 +230,19 @@ app.post("/api/send-alert", auth, async (req, res) => {
   const patient = db.patients.find(p => p.id === patientId);
   if (!patient) return res.status(404).json({ message: "Patient not found" });
 
-  const hospital = {
-    name: hospitalName,
-    lat: hospitalLat,
-    lng: hospitalLng,
-    phone: hospitalPhone
+  const alert = {
+    id: Date.now(),
+    patientId: patient.id,
+    patientName: patient.name,
+    emergencyType: patient.emergency_type,
+    symptoms: patient.symptoms,
+    hospital: hospitalName,
+    createdAt: new Date().toISOString(),
+    status: "pending"
   };
-
-  const alert = await notifyDoctors(patient, hospital);
+  
+  db.alerts.push(alert);
+  writeDB(db);
   
   res.json({ 
     message: `Alert sent to doctors! Patient is coming to ${hospitalName}`,
@@ -287,32 +250,21 @@ app.post("/api/send-alert", auth, async (req, res) => {
   });
 });
 
-// Get alerts for doctor dashboard
 app.get("/api/alerts", auth, (req, res) => {
   const db = readDB();
   const alerts = db.alerts || [];
   res.json({ alerts: alerts.reverse() });
 });
 
-// Get hospital suggestions based on symptoms
-app.post("/api/suggest-hospitals", auth, (req, res) => {
-  const { symptoms, emergency_type } = req.body;
-  const hospitals = suggestHospital(symptoms || "", emergency_type || "");
-  res.json({ hospitals });
-});
-
-// Emergency call endpoint
 app.post("/api/emergency-call", (req, res) => {
   res.json({ message: "Call 108 immediately for emergency services." });
 });
 
-// Get user profile
-app.get("/api/profile", auth, (req, res) => {
-  const db = readDB();
-  const user = db.users.find(u => u.id === req.user.id);
-  if (!user) return res.status(404).json({ message: "User not found" });
-  res.json({ user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role } });
+// ✅ FIX: 404 handler for unknown routes
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, "public", "login.html"));
 });
 
+// Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 MedRush Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 MedRush Server running on port ${PORT}`));
